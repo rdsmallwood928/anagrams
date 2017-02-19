@@ -7,10 +7,9 @@ class Anagram {
 
   constructor() {
     this.anagramsCache = {};
-    this._initAnagramsCache();
   }
 
-  _initAnagramsCache() {
+  initAnagramsCache() {
     const keys = Object.keys(dictionary.getDictionary());
     const stopWatch = StopWatch.create();
     stopWatch.start();
@@ -28,12 +27,15 @@ class Anagram {
     console.log('!!! Cache completed in: ' + stopWatch.elapsed.seconds + ' seconds');
   }
 
-  findAnagrams(word) {
+  findAnagrams(word, max) {
     let anagrams = [];
     if(typeof this.anagramsCache[word] !== 'undefined' && this.anagramsCache[word] !== null) {
       anagrams = this.anagramsCache[word];
     } else {
       this._permute(word, word, word.length, [], anagrams, {});
+    }
+    if(max >= 0) {
+      anagrams = anagrams.slice(0, max);
     }
     return {
       "anagrams" : anagrams

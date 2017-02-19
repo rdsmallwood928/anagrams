@@ -22,4 +22,12 @@ describe('Anagrams finder', () => {
       ]
     });
   });
+
+  it('Should take a max number of anagrams', () => {
+    expect(anagram.findAnagrams('read', 1)).to.deep.equal({
+      'anagrams': [
+        'dear'
+      ]
+    });
+  });
 });
