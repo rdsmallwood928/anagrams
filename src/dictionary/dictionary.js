@@ -26,7 +26,6 @@ class Dictionary {
 
   has(word) {
     const dictionaryWord = this.dictionary[word];
-    console.log('!!! Dictionary word: ' + dictionaryWord);
     return (typeof dictionaryWord != 'undefined' && this.dictionary[word] !== null);
   }
 }
