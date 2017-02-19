@@ -1,0 +1,26 @@
+{
+  "name": "anagrams",
+  "version": "1.0.0",
+  "description": "API that will search for anagrams",
+  "main": "app.js",
+  "scripts": {
+    "server": "node src/app.js",
+    "test": "./node_modules/.bin/mocha ./src/**/*Spec.js",
+    "server:watch": "npm-watch"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "app-root-dir": "^1.0.2",
+    "express": "^4.14.1",
+    "winston": "^2.3.1"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0",
+    "npm-watch": "^0.1.8"
+  },
+  "watch": {
+    "server": "src/**/*.js"
+  }
+}
