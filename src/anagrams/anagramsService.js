@@ -2,11 +2,12 @@
 
 const dictionary = require('../dictionary/dictionary.js');
 const StopWatch = require('node-stopwatch').Stopwatch;
+const _ = require('lodash');
 
 class Anagram {
 
   constructor() {
-    this.anagramsCache = {};
+    this.clear();
   }
 
   /***
@@ -36,10 +37,10 @@ class Anagram {
   }
 
   /***
-   * adds a new word to the anagram cache
-   * also when it receives its anagrams, checks the cache to update
-   * those words with itself (This should only happen after initialization)
-   ***/
+  * adds a new word to the anagram cache
+  * also when it receives its anagrams, checks the cache to update
+  * those words with itself (This should only happen after initialization)
+  ***/
   addAnagramToCache(word) {
     //No need to add a word if we already have it
     if(this.anagramsCache[word]) {
@@ -47,15 +48,45 @@ class Anagram {
     }
     let anagrams = this.findAnagrams(word);
     this.anagramsCache[word] = anagrams.anagrams;
+    //add this word to its anagrams as well
     for(let anagram of anagrams.anagrams) {
-      let cachedAnagrams = this.anagramsCache[word];
+      let cachedAnagrams = this.anagramsCache[anagram];
       if(cachedAnagrams) {
         if(!cachedAnagrams.includes(word)) {
           cachedAnagrams.push(word);
         }
       }
-      this.anagramsCache[word] = cachedAnagrams;
+      this.anagramsCache[anagram] = cachedAnagrams;
     }
+    return;
+  }
+
+  /***
+  * deletes a word from the anagram cache
+  ***/
+  deleteFromCache(word) {
+    //already deleted
+    if(!this.anagramsCache[word]) {
+      return;
+    }
+
+    //Need to delete word from its anagrams
+    let anagrams = this.findAnagrams(word);
+    for(let anagram of anagrams.anagrams) {
+      let cachedAnagrams = this.anagramsCache[anagram];
+      let index = cachedAnagrams.indexOf(word);
+      if(index > -1) {
+        cachedAnagrams.splice(index, 1);
+      }
+      this.anagramsCache[anagram] = cachedAnagrams;
+    }
+    //Also delete the word itself
+    delete this.anagramsCache[word];
+    return;
+  }
+
+  clear() {
+    this.anagramsCache = {};
   }
 
   findAnagrams(word, max) {
@@ -64,7 +95,10 @@ class Anagram {
       anagrams = this.anagramsCache[word];
       console.log('!!! Cache hit: ' + word);
     } else {
-      this._permute(word, word, word.length, [], anagrams, {});
+      //Only permute words that the dictionary knows
+      if(dictionary.has(word)) {
+        this._permute(word, word, word.length, [], anagrams, {});
+      }
     }
     if(max >= 0) {
       anagrams = anagrams.slice(0, max);

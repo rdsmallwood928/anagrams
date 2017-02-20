@@ -45,15 +45,26 @@ app.post('/words.json', upload.array(), (req, res) => {
   for(let word of body.words) {
     anagramService.addAnagramToCache(word);
   }
-  res.status(201).send('Created');
+  return res.status(201).send('Created');
 });
 
 app.delete('/words.json', (req, res) => {
   log.info('Delete received!');
   dictionary.clear();
-  res.status(204).send('No Content');
+  anagramService.clear();
+  return res.status(204).send('No Content');
+});
+
+app.delete('/words/:word.json', (req, res) => {
+  const word = req.params.word.split('.')[0];
+  log.info('Deleted: ' + word);
+  dictionary.deleteWord(word);
+  anagramService.deleteFromCache(word);
+  res.send('OK');
 });
 
 app.listen(3000, () => {
-  console.log('Example app listening on port 3000!');
+  log.info('Anagrams app running on port 3000');
 });
+
+module.exports = app;

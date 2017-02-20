@@ -9,17 +9,16 @@ const WordTreeNode = require('./wordTreeNode.js');
 class Dictionary {
 
   constructor() {
-    console.log('app root is: ' + appRootDir);
     const dictionaryRaw = fs.readFileSync(appRootDir + '/src/dictionary/dictionary.txt', 'utf-8');
     this._init(dictionaryRaw);
   }
 
   _init(dictionaryRaw) {
     this.dictionary = {};
-    this.wordTree = new WordTreeNode("");
+    this.wordTree = new WordTreeNode("", null);
     const alphabet = 'abcdefghijklmnopqrstuvwxyz';
     for(let i=0; i<alphabet.length; i++) {
-      this.wordTree.addChild(alphabet.charAt(i), new WordTreeNode(alphabet.charAt(i)));
+      this.wordTree.addChild(alphabet.charAt(i), new WordTreeNode(alphabet.charAt(i), this.wordTree));
     }
 
     for(let word of dictionaryRaw.split("\n")) {
@@ -38,9 +37,24 @@ class Dictionary {
     for(let i=0; i<word.length; i++) {
       let letter = word.charAt(i);
       if(!currentNode.hasChild(letter)) {
-        currentNode.addChild(letter, new WordTreeNode(letter));
+        currentNode.addChild(letter, new WordTreeNode(letter, currentNode));
       }
       currentNode = currentNode.getChild(letter);
+    }
+  }
+
+  deleteWord(word) {
+    word = word.toLowerCase();
+    delete this.dictionary[word];
+    let currentNode =  this.wordTree;
+    for(let i=0; i<word.length; i++) {
+      currentNode = currentNode.getChild(word.charAt(i));
+    }
+    let deleteKey = '';
+    while(!currentNode.hasChildren() && currentNode.getParent() !== null) {
+      deleteKey = currentNode.getLetter();
+      currentNode = currentNode.getParent();
+      currentNode.removeChild(deleteKey);
     }
   }
 
