@@ -11,6 +11,10 @@ class Dictionary {
   constructor() {
     console.log('app root is: ' + appRootDir);
     const dictionaryRaw = fs.readFileSync(appRootDir + '/src/dictionary/dictionary.txt', 'utf-8');
+    this._init(dictionaryRaw);
+  }
+
+  _init(dictionaryRaw) {
     this.dictionary = {};
     this.wordTree = new WordTreeNode("");
     const alphabet = 'abcdefghijklmnopqrstuvwxyz';
@@ -19,21 +23,33 @@ class Dictionary {
     }
 
     for(let word of dictionaryRaw.split("\n")) {
-      word = word.toLowerCase();
-      this.dictionary[word] = word;
-      let currentNode = this.wordTree;
-      for(let i=0; i<word.length; i++) {
-        let letter = word.charAt(i);
-        if(!currentNode.hasChild(letter)) {
-          currentNode.addChild(letter, new WordTreeNode(letter));
-        }
-        currentNode = currentNode.getChild(letter);
+      this.addWord(word);
+    }
+  }
+
+  addWord(word) {
+    //Don't add words we already have
+    if(this.dictionary[word]) {
+      return;
+    }
+    word = word.toLowerCase();
+    this.dictionary[word] = word;
+    let currentNode = this.wordTree;
+    for(let i=0; i<word.length; i++) {
+      let letter = word.charAt(i);
+      if(!currentNode.hasChild(letter)) {
+        currentNode.addChild(letter, new WordTreeNode(letter));
       }
+      currentNode = currentNode.getChild(letter);
     }
   }
 
   getDictionary() {
     return this.dictionary;
+  }
+
+  clear() {
+    this._init("");
   }
 
   setDictionary(dictionary) {

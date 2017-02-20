@@ -4,8 +4,14 @@ const dictionary = require('./dictionary/dictionary.js');
 const express = require('express');
 const log = require('winston');
 const anagramService = require('./anagrams/anagramsService.js');
+const bodyParser = require('body-parser');
+const multer = require('multer');
 
+const upload = multer();
 const app = express();
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
   res.send(dictionary.getDictionary());
@@ -16,12 +22,37 @@ app.get('/anagrams/:word.json', (req, res) => {
   if(req.query.max) {
     max = req.query.max;
   }
-  log.info('Request for word: ' + req.params.word.split('.')[0] + ' anagrams recieved! Only want to see ' + 
+  log.info('Request for word: ' + req.params.word.split('.')[0] + ' anagrams recieved! Only want to see ' +
     max + ' anagrams');
   const anagrams = anagramService.findAnagrams(req.params.word.split('.')[0], max);
   res.send(anagrams);
 });
 
+app.post('/words.json', upload.array(), (req, res) => {
+  const fourHundredMessage = 'No body provided, should be { "words": [<words>] }, Don\'t forget application/json header as well';
+  if(!req.body) {
+    res.status(400).send(fourHundredMessage);
+    return;
+  }
+  const body = req.body;
+  if(!body.words) {
+    res.status(400).send(fourHundredMessage);
+    return;
+  }
+  for(let word of body.words) {
+    dictionary.addWord(word);
+  }
+  for(let word of body.words) {
+    anagramService.addAnagramToCache(word);
+  }
+  res.status(201).send('Created');
+});
+
+app.delete('/words.json', (req, res) => {
+  log.info('Delete received!');
+  dictionary.clear();
+  res.status(204).send('No Content');
+});
 
 app.listen(3000, () => {
   console.log('Example app listening on port 3000!');
