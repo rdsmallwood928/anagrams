@@ -16,6 +16,7 @@ class Dictionary {
 
   _init(dictionaryRaw) {
     this.dictionary = {};
+    this.nonProperNouns = {};
     this.wordTree = new WordTreeNode("", null);
     const alphabet = 'abcdefghijklmnopqrstuvwxyz';
     for(let i=0; i<alphabet.length; i++) {
@@ -29,8 +30,11 @@ class Dictionary {
 
   addWord(word) {
     //Don't add words we already have or empty wordr
-    if(this.dictionary[word] || word.length === 0) {
+    if(this.dictionary[word.toLowerCase()] || word.length === 0) {
       return;
+    }
+    if(word.charAt(0) !== word.charAt(0).toUpperCase()) {
+      this.nonProperNouns[word.toLowerCase()] = word.toLowerCase();
     }
     word = word.toLowerCase();
     this.dictionary[word] = word;
@@ -47,6 +51,7 @@ class Dictionary {
   deleteWord(word) {
     word = word.toLowerCase();
     delete this.dictionary[word];
+    delete this.nonProperNouns[word];
     let currentNode =  this.wordTree;
     for(let i=0; i<word.length; i++) {
       currentNode = currentNode.getChild(word.charAt(i));
@@ -57,6 +62,10 @@ class Dictionary {
       currentNode = currentNode.getParent();
       currentNode.removeChild(deleteKey);
     }
+  }
+
+  isProperNoun(word) {
+    return (typeof this.nonProperNouns[word] === 'undefined' || this.nonProperNouns[word] === null);
   }
 
   /**

@@ -24,6 +24,35 @@ describe('Anagram integ tests', () => {
     json: true
   };
 
+  const getAnagramOneMax = {
+    uri: 'http://localhost:3000/anagrams/read.json?max=1',
+    headers: {
+      'User-Agent': 'Request-Promise'
+    },
+    method: 'GET',
+    json: true
+  };
+
+  const getAnagramNoProperNouns = {
+    uri: 'http://localhost:3000/anagrams/read.json?properNouns=false',
+    headers: {
+      'User-Agent': 'Request-Promise'
+    },
+    method: 'GET',
+    json: true
+  };
+
+  const getAnagramNoProperNounsAndMax = {
+    uri: 'http://localhost:3000/anagrams/read.json?properNouns=false&max=1',
+    headers: {
+      'User-Agent': 'Request-Promise'
+    },
+    method: 'GET',
+    json: true
+  };
+
+
+
   const getStats = {
     uri: 'http://localhost:3000/words/stats.json',
     headers: {
@@ -43,15 +72,6 @@ describe('Anagram integ tests', () => {
     json: true
   };
 
-  const getAnagramOneMax = {
-    uri: 'http://localhost:3000/anagrams/read.json?max=1',
-    headers: {
-      'User-Agent': 'Request-Promise'
-    },
-    method: 'GET',
-    json: true
-  };
-
   const addThreeWordsTwoAnagrams = {
     uri: 'http://localhost:3000/words.json',
     headers: {
@@ -64,6 +84,20 @@ describe('Anagram integ tests', () => {
     method: 'POST',
     json:true
   };
+
+  const addThreeProperNounsTwoAnagrams = {
+    uri: 'http://localhost:3000/words.json',
+    headers: {
+      'User-Agent': 'Request-Promise',
+      'Content-Type': 'application/json'
+    },
+    body: {
+      "words": ["Adre", "Drea", "Joker"]
+    },
+    method: 'POST',
+    json: true
+  };
+
 
   const addAnotherWord = {
     uri: 'http://localhost:3000/words.json',
@@ -89,9 +123,7 @@ describe('Anagram integ tests', () => {
 
   beforeEach(() => {
     options = deleteDictionary;
-    return http(options).then((response) => {
-      console.log(response);
-    });
+    return http(options).then((response) => {});
   });
 
   it('should not have any words to start', () => {
@@ -116,13 +148,12 @@ describe('Anagram integ tests', () => {
   });
 
   it('should add some words then add some more and still get the right anagrams', () => {
-    options = addThreeWordsTwoAnagrams;
-    return http(options).then((response) => {
+    return http(addThreeWordsTwoAnagrams).then((response) => {
       expect(response).to.equal('Created');
       return http(addAnotherWord);
     }).then((response) => {
       expect(response).to.equal('Created');
-      return http.get(getAnagram);
+      return http(getAnagram);
     }).then((response) => {
       expect(response).to.deep.equal({
         "anagrams": [
@@ -194,7 +225,7 @@ describe('Anagram integ tests', () => {
       return http(addAnotherWord);
     }).then((response) => {
       expect(response).to.equal('Created');
-      return http.get(getStats);
+      return http(getStats);
     }).then((response) => {
       expect(response).to.deep.equal({
         "numWords": 4,
@@ -208,14 +239,43 @@ describe('Anagram integ tests', () => {
 
   it('should report stats with an empty dictionary', () => {
     options = addThreeWordsTwoAnagrams;
-    return http.get(getStats).then((response) => {
-      console.log(JSON.stringify(response, null, 2));
+    return http(getStats).then((response) => {
       expect(response).to.deep.equal({
         "numWords": 0,
         "max": 0,
         "min": 0,
         "average": 0,
         "median": 0
+      });
+    });
+  });
+
+  it('should not return proper nouns', () => {
+    return http(addThreeWordsTwoAnagrams).then((response) => {
+      return http(addThreeProperNounsTwoAnagrams);
+    }).then((response) => {
+      return http(getAnagramNoProperNouns);
+    }).then((response) => {
+      expect(response).to.deep.equal({
+        "anagrams": [
+          "dear"
+        ]
+      });
+    });
+  });
+
+  it('should not return proper nouns and take a max', () => {
+    return http(addThreeWordsTwoAnagrams).then((response) => {
+      return http(addThreeProperNounsTwoAnagrams);
+    }).then((response) => {
+      return http(addAnotherWord);
+    }).then((response) => {
+      return http(getAnagramNoProperNounsAndMax);
+    }).then((response) => {
+      expect(response).to.deep.equal({
+        "anagrams": [
+          "dear"
+        ]
       });
     });
   });

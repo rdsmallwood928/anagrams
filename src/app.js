@@ -19,12 +19,16 @@ app.get('/', (req, res) => {
 
 app.get('/anagrams/:word.json', (req, res) => {
   let max = -1;
+  let properNouns = true;
   if(req.query.max) {
     max = req.query.max;
   }
+  if(req.query.properNouns) {
+    properNouns = req.query.properNouns;
+  }
   log.info('Request for word: ' + req.params.word.split('.')[0] + ' anagrams recieved! Only want to see ' +
     max + ' anagrams');
-  const anagrams = anagramService.findAnagrams(req.params.word.split('.')[0], max);
+  const anagrams = anagramService.findAnagrams(req.params.word.split('.')[0], max, properNouns);
   res.send(anagrams);
 });
 

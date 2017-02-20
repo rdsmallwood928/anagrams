@@ -42,6 +42,10 @@ class Anagram {
   * those words with itself (This should only happen after initialization)
   ***/
   addAnagramToCache(word) {
+    if(word.length === 0) {
+      return;
+    }
+    word = word.toLowerCase();
     //No need to add a word if we already have it
     if(this.anagramsCache[word]) {
       return;
@@ -89,20 +93,33 @@ class Anagram {
     this.anagramsCache = {};
   }
 
-  findAnagrams(word, max) {
+  findAnagrams(word, max, includeProperNouns=true) {
     let anagrams = [];
     if(typeof this.anagramsCache[word] !== 'undefined' && this.anagramsCache[word] !== null) {
       anagrams = this.anagramsCache[word];
-      console.log('!!! Cache hit: ' + word);
     } else {
       //Only permute words that the dictionary knows
       if(dictionary.has(word)) {
         this._permute(word, word, word.length, [], anagrams, {});
       }
     }
-    if(max >= 0) {
+
+    //Check for proper nouns first if we need to
+    let properNouns = [];
+    if(includeProperNouns === false || includeProperNouns === "false") {
+      for(let i=0; i<anagrams.length; i++) {
+        if(dictionary.isProperNoun(anagrams[i])) {
+          anagrams.splice(i, 1);
+          i--;
+        }
+      }
+    }
+
+    //Then check max results
+    if(max >= 0 && max < anagrams.length) {
       anagrams = anagrams.slice(0, max);
     }
+
     return {
       "anagrams" : anagrams
     };
