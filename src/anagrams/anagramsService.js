@@ -2,6 +2,7 @@
 
 const Dictionary = require('../dictionary/dictionary.js');
 const StopWatch = require('node-stopwatch').Stopwatch;
+const log = require('winston');
 const _ = require('lodash');
 
 class Anagram {

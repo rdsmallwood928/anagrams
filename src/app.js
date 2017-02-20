@@ -15,7 +15,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
-  res.send(anagramService.getDictionary().getDictionary());
+  res.send('OK');
 });
 
 app.get('/anagrams/:word.json', (req, res) => {
@@ -89,6 +89,10 @@ app.get('/words/anagram_stats.json', (req, res) => {
   const stats = anagramService.getWordsWithMostAnagrams();
   return res.json(stats);
 });
+
+if(process.env.INIT_ANAGRAM_CACHE === "true") {
+  anagramService.initAnagramsCache();
+}
 
 app.listen(3000, () => {
   log.info('Anagrams app running on port 3000');

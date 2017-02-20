@@ -9,7 +9,8 @@
     "integTest": "./node_modules/.bin/mocha ./test/**/*.js",
     "testdbg": "./node_modules/.bin/mocha --debug-brk ./src/**/*Spec.js",
     "server:watch": "npm-watch",
-    "test:debug": "./node_modules/.bin/node-inspector && npm run testdbg"
+    "test:debug": "./node_modules/.bin/node-inspector && npm run testdbg",
+    "buildImage": "docker build . -t rdsmallwood928/anagrams:latest"
   },
   "author": "",
   "license": "ISC",
