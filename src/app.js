@@ -90,12 +90,12 @@ app.get('/words/anagram_stats.json', (req, res) => {
   return res.json(stats);
 });
 
-if(process.env.INIT_ANAGRAM_CACHE === "true") {
-  anagramService.initAnagramsCache();
-}
-
 app.listen(3000, () => {
   log.info('Anagrams app running on port 3000');
 });
+
+if(process.env.INIT_ANAGRAM_CACHE === "true") {
+  anagramService.initAnagramsCache();
+}
 
 module.exports = app;
