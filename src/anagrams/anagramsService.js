@@ -121,24 +121,21 @@ class Anagram {
   }
 
   _deleteWordFromCache(word) {
-     this.dictionary.deleteWord(word);
-    //already deleted
-    if(!this.anagramsCache[word]) {
-      return;
-    }
-
     //Need to delete word from its anagrams
     let anagrams = this.findAnagrams(word);
     for(let anagram of anagrams.anagrams) {
       let cachedAnagrams = this.anagramsCache[anagram];
-      let index = cachedAnagrams.indexOf(word);
-      if(index > -1) {
-        cachedAnagrams.splice(index, 1);
+      if(cachedAnagrams) {
+        let index = cachedAnagrams.indexOf(word);
+        if(index > -1) {
+          cachedAnagrams.splice(index, 1);
+        }
+        this.anagramsCache[anagram] = cachedAnagrams;
       }
-      this.anagramsCache[anagram] = cachedAnagrams;
     }
     //Also delete the word itself
     delete this.anagramsCache[word];
+    this.dictionary.deleteWord(word);
     return;
   }
 
@@ -146,9 +143,9 @@ class Anagram {
   * deletes a word from the anagram cache
   ***/
   deleteFromCache(word, deleteAnagrams=false) {
+    console.log('!!! deleting ' + word);
     if(deleteAnagrams) {
       let anagrams = this.findAnagrams(word);
-      console.log('!!! Anagrams: ' + JSON.stringify(anagrams, null, 2));
       for(let anagram of anagrams.anagrams) {
         this._deleteWordFromCache(anagram);
       }
@@ -193,10 +190,12 @@ class Anagram {
   findAnagrams(word, max=-1, includeProperNouns=true, aDictionary=this.dictionary) {
     let anagrams = [];
     if(typeof this.anagramsCache[word] !== 'undefined' && this.anagramsCache[word] !== null) {
+      console.log('!!! Cache hit ' + word);
       //return a copy of the cached array
       anagrams = this.anagramsCache[word].slice();
     } else {
       anagrams = this.findAnagramsWithoutCache(word, aDictionary);
+      this.anagramsCache[word] = anagrams;
     }
     return {
       "anagrams" : this._filterAnagrams(anagrams, includeProperNouns, max, aDictionary)

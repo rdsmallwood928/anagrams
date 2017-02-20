@@ -56,6 +56,12 @@ Setup
   npm run server
   ```
 
+--Running the tests
+  -Run
+  ```
+  npm run integTest
+  ```
+
 How does this work?
 =====
 
@@ -71,5 +77,7 @@ this is useful in order to look up anagrams that have already been requested.  T
 once.
 
 
-
-
+TODO
+=====
+Move the anagrams cache out to some data store.  Right now this won't scale because each machine maintains its own
+anagrams cache.

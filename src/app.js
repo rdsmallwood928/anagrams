@@ -33,6 +33,16 @@ app.get('/anagrams/:word.json', (req, res) => {
   res.send(anagrams);
 });
 
+app.get('/words/stats.json', (req, res) => {
+  const stats = anagramService.getDictionary().getStats();
+  return res.json(stats);
+});
+
+app.get('/words/anagram_stats.json', (req, res) => {
+  const stats = anagramService.getWordsWithMostAnagrams();
+  return res.json(stats);
+});
+
 app.post('/words/are_anagrams.json', (req, res) => {
   if(!req.body) {
     res.status(400).send(FOUR_HUNDRED_MESSAGE);
@@ -78,16 +88,6 @@ app.delete('/words/:word.json', (req, res) => {
   log.info('Deleted: ' + word);
   anagramService.deleteFromCache(word, deleteAnagrams);
   return res.send('OK');
-});
-
-app.get('/words/stats.json', (req, res) => {
-  const stats = anagramService.getDictionary().getStats();
-  return res.json(stats);
-});
-
-app.get('/words/anagram_stats.json', (req, res) => {
-  const stats = anagramService.getWordsWithMostAnagrams();
-  return res.json(stats);
 });
 
 app.listen(3000, () => {
