@@ -143,7 +143,6 @@ class Anagram {
   * deletes a word from the anagram cache
   ***/
   deleteFromCache(word, deleteAnagrams=false) {
-    console.log('!!! deleting ' + word);
     if(deleteAnagrams) {
       let anagrams = this.findAnagrams(word);
       for(let anagram of anagrams.anagrams) {
@@ -190,7 +189,6 @@ class Anagram {
   findAnagrams(word, max=-1, includeProperNouns=true, aDictionary=this.dictionary) {
     let anagrams = [];
     if(typeof this.anagramsCache[word] !== 'undefined' && this.anagramsCache[word] !== null) {
-      console.log('!!! Cache hit ' + word);
       //return a copy of the cached array
       anagrams = this.anagramsCache[word].slice();
     } else {
