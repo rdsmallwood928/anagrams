@@ -51,8 +51,6 @@ describe('Anagram integ tests', () => {
     json: true
   };
 
-
-
   const getStats = {
     uri: 'http://localhost:3000/words/stats.json',
     headers: {
@@ -62,6 +60,14 @@ describe('Anagram integ tests', () => {
     json: true
   };
 
+  const getAnagramStats = {
+    uri: 'http://localhost:3000/words/anagram_stats.json',
+    headers: {
+      'User-Agent': 'Request-Promise'
+    },
+    method: 'GET',
+    json: true
+  };
 
   const getDifferentAnagram = {
     uri: 'http://localhost:3000/anagrams/dare.json',
@@ -70,6 +76,32 @@ describe('Anagram integ tests', () => {
     },
     method: 'GET',
     json: true
+  };
+
+  const wordsAreAnagrams = {
+    uri: 'http://localhost:3000/words/are_anagrams.json',
+    headers: {
+      'User-Agent': 'Request-Promise',
+      'Content-Type': 'application/json'
+    },
+    body: {
+      "words": ["read", "dear", "dare", "ared"]
+    },
+    method: 'POST',
+    json:true
+  };
+
+  const wordsAreNotAnagrams = {
+    uri: 'http://localhost:3000/words/are_anagrams.json',
+    headers: {
+      'User-Agent': 'Request-Promise',
+      'Content-Type': 'application/json'
+    },
+    body: {
+      "words": ["rvad", "dear", "dare", "ared"]
+    },
+    method: 'POST',
+    json:true
   };
 
   const addThreeWordsTwoAnagrams = {
@@ -121,6 +153,15 @@ describe('Anagram integ tests', () => {
     json: true
   };
 
+  const deleteAWordAndItsAnagrams = {
+    uri: 'http://localhost:3000/words/dare.json?anagrams=true',
+    headers: {
+      'User-Agent': 'Request-Promise'
+    },
+    method: 'DELETE',
+    json: true
+  };
+
   beforeEach(() => {
     options = deleteDictionary;
     return http(options).then((response) => {});
@@ -165,15 +206,45 @@ describe('Anagram integ tests', () => {
     }).then((response) => {
       expect(response).to.deep.equal({
         "anagrams": [
-          "dear",
+          "dear"
         ]
       });
     });
   });
 
+  it('should add some words and then delete a word and its anagrams', () => {
+    return http(addThreeWordsTwoAnagrams).then((response) => {
+      return http(addAnotherWord);
+    }).then((response) => {
+      return http(getAnagram);
+    }).then((response) => {
+      expect(response).to.deep.equal({
+        "anagrams": [
+          "dear",
+          "dare"
+        ]
+      });
+      return http(deleteAWordAndItsAnagrams);
+    }).then((response) => {
+      return http(getAnagram);
+    }).then((response) => {
+      expect(response).to.deep.equal({
+        "anagrams": []
+      });
+      return http(getStats);
+    }).then((response) => {
+      expect(response).to.deep.equal({
+        "numWords": 1,
+        "max": 6,
+        "min": 6,
+        "median": 6,
+        "average": 6
+      });
+    });
+  });
+
   it('should add some words then delete them and get the right anagrams', () => {
-    options = addThreeWordsTwoAnagrams;
-    return http(options).then((response) => {
+    return http(addThreeWordsTwoAnagrams).then((response) => {
       expect(response).to.equal('Created');
       return http(addAnotherWord);
     }).then((response) => {
@@ -280,4 +351,39 @@ describe('Anagram integ tests', () => {
     });
   });
 
+  it('should return anagram stats', () => {
+    return http(addThreeWordsTwoAnagrams).then((response) => {
+      return http(addThreeProperNounsTwoAnagrams);
+    }).then((response) => {
+      return http(addAnotherWord);
+    }).then((response) => {
+      return http(getAnagramStats);
+    }).then((response) => {
+      expect(response).to.deep.equal({
+        "numAnagrams": 4,
+        "words": ['read', 'dear', 'adre', 'drea', 'dare']
+      });
+    });
+  });
+
+  it('should still return anagram stats if there are none', () => {
+    return http(getAnagramStats).then((response) => {
+      expect(response).to.deep.equal({
+        "numAnagrams": 0,
+        "words": []
+      });
+    });
+  });
+
+  it('should tell if a set of words are anagrams', () => {
+    return http(wordsAreAnagrams).then((response) => {
+      expect(response).to.deep.equal({"areAnagrams": true});
+    });
+  });
+
+  it('should tell if a set of words are not anagrams', () => {
+    return http(wordsAreNotAnagrams).then((response) => {
+      expect(response).to.deep.equal({"areAnagrams": false});
+    });
+  });
 });

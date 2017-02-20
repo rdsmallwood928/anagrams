@@ -1,6 +1,5 @@
 'use strict';
 
-const dictionary = require('./dictionary/dictionary.js');
 const express = require('express');
 const log = require('winston');
 const anagramService = require('./anagrams/anagramsService.js');
@@ -10,11 +9,13 @@ const multer = require('multer');
 const upload = multer();
 const app = express();
 
+const FOUR_HUNDRED_MESSAGE = 'No body provided, should be { "words": [<words>] }, Don\'t forget application/json header as well';
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
-  res.send(dictionary.getDictionary());
+  res.send(anagramService.getDictionary().getDictionary());
 });
 
 app.get('/anagrams/:word.json', (req, res) => {
@@ -32,19 +33,29 @@ app.get('/anagrams/:word.json', (req, res) => {
   res.send(anagrams);
 });
 
-app.post('/words.json', upload.array(), (req, res) => {
-  const fourHundredMessage = 'No body provided, should be { "words": [<words>] }, Don\'t forget application/json header as well';
+app.post('/words/are_anagrams.json', (req, res) => {
   if(!req.body) {
-    res.status(400).send(fourHundredMessage);
+    res.status(400).send(FOUR_HUNDRED_MESSAGE);
     return;
   }
   const body = req.body;
   if(!body.words) {
-    res.status(400).send(fourHundredMessage);
+    res.status(400).send(FOUR_HUNDRED_MESSAGE);
     return;
   }
-  for(let word of body.words) {
-    dictionary.addWord(word);
+  const areAnagrams = anagramService.areWordsAnagrams(body.words);
+  res.json({"areAnagrams": areAnagrams});
+});
+
+app.post('/words.json', upload.array(), (req, res) => {
+  if(!req.body) {
+    res.status(400).send(FOUR_HUNDRED_MESSAGE);
+    return;
+  }
+  const body = req.body;
+  if(!body.words) {
+    res.status(400).send(FOUR_HUNDRED_MESSAGE);
+    return;
   }
   for(let word of body.words) {
     anagramService.addAnagramToCache(word);
@@ -54,21 +65,28 @@ app.post('/words.json', upload.array(), (req, res) => {
 
 app.delete('/words.json', (req, res) => {
   log.info('Delete received!');
-  dictionary.clear();
   anagramService.clear();
   return res.status(204).send('No Content');
 });
 
 app.delete('/words/:word.json', (req, res) => {
   const word = req.params.word.split('.')[0];
+  let deleteAnagrams = false;
+  if(req.query.anagrams) {
+    deleteAnagrams = req.query.anagrams;
+  }
   log.info('Deleted: ' + word);
-  dictionary.deleteWord(word);
-  anagramService.deleteFromCache(word);
+  anagramService.deleteFromCache(word, deleteAnagrams);
   return res.send('OK');
 });
 
 app.get('/words/stats.json', (req, res) => {
-  const stats = dictionary.getStats();
+  const stats = anagramService.getDictionary().getStats();
+  return res.json(stats);
+});
+
+app.get('/words/anagram_stats.json', (req, res) => {
+  const stats = anagramService.getWordsWithMostAnagrams();
   return res.json(stats);
 });
 

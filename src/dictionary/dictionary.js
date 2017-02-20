@@ -9,8 +9,11 @@ const quicksort = require('quicksort');
 
 class Dictionary {
 
-  constructor() {
-    const dictionaryRaw = fs.readFileSync(appRootDir + '/src/dictionary/dictionary.txt', 'utf-8');
+  constructor(dictionaryRaw) {
+    if(!dictionaryRaw) {
+      dictionaryRaw = fs.readFileSync(appRootDir + '/src/dictionary/dictionary.txt', 'utf-8');
+      dictionaryRaw = dictionaryRaw.split("\n");
+    }
     this._init(dictionaryRaw);
   }
 
@@ -23,9 +26,13 @@ class Dictionary {
       this.wordTree.addChild(alphabet.charAt(i), new WordTreeNode(alphabet.charAt(i), this.wordTree));
     }
 
-    for(let word of dictionaryRaw.split("\n")) {
+    for(let word of dictionaryRaw) {
       this.addWord(word);
     }
+  }
+
+  getDictionary() {
+    return this.dictionary();
   }
 
   addWord(word) {
@@ -145,4 +152,4 @@ class Dictionary {
   }
 }
 
-module.exports = new Dictionary();
+module.exports = Dictionary;

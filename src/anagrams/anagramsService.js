@@ -1,13 +1,14 @@
 'use strict';
 
-const dictionary = require('../dictionary/dictionary.js');
+const Dictionary = require('../dictionary/dictionary.js');
 const StopWatch = require('node-stopwatch').Stopwatch;
 const _ = require('lodash');
 
 class Anagram {
 
   constructor() {
-    this.clear();
+    this.dictionary = new Dictionary();
+    this.anagramsCache = {};
   }
 
   /***
@@ -18,8 +19,9 @@ class Anagram {
    * This should really only ever be called at start up so that we can
    * get constant time lookups of anagrams
    ***/
+
   initAnagramsCache() {
-    const keys = Object.keys(dictionary.getDictionary());
+    const keys = Object.keys(this.dictionary.getDictionary());
     const stopWatch = StopWatch.create();
     stopWatch.start();
     const totalKeys = keys.length;
@@ -29,11 +31,35 @@ class Anagram {
       this.anagramsCache[key] = anagrams.anagrams;
       numWords++;
       if(numWords % 1000 === 0) {
-        console.log('!!! ' + numWords + '/' + totalKeys + ' completed');
+        log.info(numWords + '/' + totalKeys + ' completed');
       }
     }
     stopWatch.stop();
-    console.log('!!! Cache completed in: ' + stopWatch.elapsed.seconds + ' seconds');
+    log.info('Cache completed in: ' + stopWatch.elapsed.seconds + ' seconds');
+  }
+
+  getDictionary() {
+    return this.dictionary;
+  }
+
+  getWordsWithMostAnagrams() {
+    let  max = 0;
+    let wordsWithMost = [];
+    for(let key of Object.keys(this.anagramsCache)) {
+      if((typeof this.anagramsCache[key] !== 'undefined') && (this.anagramsCache[key] !== null)) {
+        if(this.anagramsCache[key].length === max) {
+          wordsWithMost.push(key);
+        } else if(this.anagramsCache[key].length > max) {
+          wordsWithMost = [];
+          wordsWithMost.push(key);
+          max = this.anagramsCache[key].length;
+        }
+      }
+    }
+    return {
+      "numAnagrams": max,
+      "words": wordsWithMost
+    };
   }
 
   /***
@@ -45,6 +71,9 @@ class Anagram {
     if(word.length === 0) {
       return;
     }
+    //Need to add word to dictionary since service now holds an instance of the dictionary
+    this.dictionary.addWord(word);
+
     word = word.toLowerCase();
     //No need to add a word if we already have it
     if(this.anagramsCache[word]) {
@@ -66,9 +95,32 @@ class Anagram {
   }
 
   /***
-  * deletes a word from the anagram cache
-  ***/
-  deleteFromCache(word) {
+   * Takes an array of words and determines if they are anagrams
+   ***/
+  areWordsAnagrams(words) {
+    if(words.length === 0) {
+      return true;
+    }
+
+    //All words need to be the same length in order to anagrams
+    let length = words[0].length;
+    for(let word of words) {
+      if(word.length !== length) {
+        return false;
+      }
+    }
+    //Bah the worst!  Lets go ahead and check the words
+    let wordsMap = {};
+    for(let word of words) {
+      wordsMap[word] = word;
+    }
+    let localDictionary = new Dictionary(words);
+    let anagrams = this.findAnagramsWithoutCache(words[0], localDictionary);
+    return (anagrams.length === (words.length - 1));
+  }
+
+  _deleteWordFromCache(word) {
+     this.dictionary.deleteWord(word);
     //already deleted
     if(!this.anagramsCache[word]) {
       return;
@@ -89,26 +141,41 @@ class Anagram {
     return;
   }
 
-  clear() {
-    this.anagramsCache = {};
-  }
-
-  findAnagrams(word, max, includeProperNouns=true) {
-    let anagrams = [];
-    if(typeof this.anagramsCache[word] !== 'undefined' && this.anagramsCache[word] !== null) {
-      anagrams = this.anagramsCache[word];
-    } else {
-      //Only permute words that the dictionary knows
-      if(dictionary.has(word)) {
-        this._permute(word, word, word.length, [], anagrams, {});
+  /***
+  * deletes a word from the anagram cache
+  ***/
+  deleteFromCache(word, deleteAnagrams=false) {
+    if(deleteAnagrams) {
+      let anagrams = this.findAnagrams(word);
+      console.log('!!! Anagrams: ' + JSON.stringify(anagrams, null, 2));
+      for(let anagram of anagrams.anagrams) {
+        this._deleteWordFromCache(anagram);
       }
     }
+    this._deleteWordFromCache(word);
+    return;
+  }
 
+  clear() {
+    this.anagramsCache = {};
+    this.dictionary.clear();
+  }
+
+  findAnagramsWithoutCache(word, aDictionary=this.dictionary) {
+    let anagrams = [];
+    //Only permute words the dictionary knows
+    if(aDictionary.has(word)) {
+      this._permute(word, word, word.length, [], anagrams, {}, aDictionary);
+    }
+    return anagrams;
+  }
+
+  _filterAnagrams(anagrams, includeProperNouns, max, aDictionary) {
     //Check for proper nouns first if we need to
     let properNouns = [];
     if(includeProperNouns === false || includeProperNouns === "false") {
       for(let i=0; i<anagrams.length; i++) {
-        if(dictionary.isProperNoun(anagrams[i])) {
+        if(aDictionary.isProperNoun(anagrams[i])) {
           anagrams.splice(i, 1);
           i--;
         }
@@ -119,15 +186,25 @@ class Anagram {
     if(max >= 0 && max < anagrams.length) {
       anagrams = anagrams.slice(0, max);
     }
+    return anagrams;
+  }
 
+  findAnagrams(word, max=-1, includeProperNouns=true, aDictionary=this.dictionary) {
+    let anagrams = [];
+    if(typeof this.anagramsCache[word] !== 'undefined' && this.anagramsCache[word] !== null) {
+      //return a copy of the cached array
+      anagrams = this.anagramsCache[word].slice();
+    } else {
+      anagrams = this.findAnagramsWithoutCache(word, aDictionary);
+    }
     return {
-      "anagrams" : anagrams
+      "anagrams" : this._filterAnagrams(anagrams, includeProperNouns, max, aDictionary)
     };
   }
 
-  _permute(originalWord, word, length, prefix, anagrams, checkedPrefixes) {
+  _permute(originalWord, word, length, prefix, anagrams, checkedPrefixes, aDictionary) {
     if(word.length === 0) {
-      if(prefix != originalWord && !anagrams.includes(prefix) && dictionary.has(prefix)) {
+      if(prefix != originalWord && !anagrams.includes(prefix) && aDictionary.has(prefix)) {
         anagrams.push(prefix);
         return;
       }
@@ -139,8 +216,8 @@ class Anagram {
       newPrefix = prefix + word.charAt(i);
       if(typeof checkedPrefixes[newPrefix] == 'undefined' || checkedPrefixes[newPrefix] === null) {
         checkedPrefixes[newPrefix] = newPrefix;
-        if(dictionary.mayHaveSomeWords(newPrefix)) {
-          this._permute(originalWord, newWord, length, newPrefix, anagrams, checkedPrefixes);
+        if(aDictionary.mayHaveSomeWords(newPrefix)) {
+          this._permute(originalWord, newWord, length, newPrefix, anagrams, checkedPrefixes, aDictionary);
         }
       }
     }

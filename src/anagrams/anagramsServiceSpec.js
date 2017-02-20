@@ -1,12 +1,11 @@
 'use strict';
 
 const anagram = require('./anagramsService.js');
-const dictionary = require('../dictionary/dictionary.js');
 
 describe('Anagrams finder', () => {
 
   beforeEach(() => {
-    dictionary.setDictionary({
+    anagram.getDictionary().setDictionary({
       "read": "read",
       "dear": "dear",
       "dare": "dare",
