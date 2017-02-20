@@ -60,7 +60,12 @@ app.delete('/words/:word.json', (req, res) => {
   log.info('Deleted: ' + word);
   dictionary.deleteWord(word);
   anagramService.deleteFromCache(word);
-  res.send('OK');
+  return res.send('OK');
+});
+
+app.get('/words/stats.json', (req, res) => {
+  const stats = dictionary.getStats();
+  return res.json(stats);
 });
 
 app.listen(3000, () => {

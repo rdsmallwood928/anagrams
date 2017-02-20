@@ -24,6 +24,16 @@ describe('Anagram integ tests', () => {
     json: true
   };
 
+  const getStats = {
+    uri: 'http://localhost:3000/words/stats.json',
+    headers: {
+      'User-Agent': 'Request-Promise'
+    },
+    method: 'GET',
+    json: true
+  };
+
+
   const getDifferentAnagram = {
     uri: 'http://localhost:3000/anagrams/dare.json',
     headers: {
@@ -176,4 +186,38 @@ describe('Anagram integ tests', () => {
       });
     });
   });
+
+  it('should report stats', () => {
+    options = addThreeWordsTwoAnagrams;
+    return http(options).then((response) => {
+      expect(response).to.equal('Created');
+      return http(addAnotherWord);
+    }).then((response) => {
+      expect(response).to.equal('Created');
+      return http.get(getStats);
+    }).then((response) => {
+      expect(response).to.deep.equal({
+        "numWords": 4,
+        "max": 6,
+        "min": 4,
+        "median": 4,
+        "average": 4.5
+      });
+    });
+  });
+
+  it('should report stats with an empty dictionary', () => {
+    options = addThreeWordsTwoAnagrams;
+    return http.get(getStats).then((response) => {
+      console.log(JSON.stringify(response, null, 2));
+      expect(response).to.deep.equal({
+        "numWords": 0,
+        "max": 0,
+        "min": 0,
+        "average": 0,
+        "median": 0
+      });
+    });
+  });
+
 });

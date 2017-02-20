@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const log = require('winston');
 const WordTreeNode = require('./wordTreeNode.js');
+const quicksort = require('quicksort');
 
 class Dictionary {
 
@@ -27,8 +28,8 @@ class Dictionary {
   }
 
   addWord(word) {
-    //Don't add words we already have
-    if(this.dictionary[word]) {
+    //Don't add words we already have or empty wordr
+    if(this.dictionary[word] || word.length === 0) {
       return;
     }
     word = word.toLowerCase();
@@ -56,6 +57,52 @@ class Dictionary {
       currentNode = currentNode.getParent();
       currentNode.removeChild(deleteKey);
     }
+  }
+
+  /**
+   * Will return stats about the dictionary
+   **/
+  getStats() {
+    let min = Number.MAX_VALUE;
+    let max = 0;
+    let numWords = 0;
+    let totalLetters = 0;
+    let lengthArray = [];
+    for(let word of Object.keys(this.dictionary)) {
+      numWords++;
+      if(word.length > max) {
+        max = word.length;
+      }
+      if(word.length < min) {
+        min = word.length;
+      }
+      lengthArray.push(word.length);
+      totalLetters = totalLetters + word.length;
+    }
+    lengthArray.sort();
+    let middle = Math.floor(lengthArray.length/2);
+    let median = 0;
+    if(lengthArray.length > 0) {
+      if(lengthArray.length % 2) {
+        median = lengthArray[middle];
+      } else {
+        median = (lengthArray[middle-1] + lengthArray[middle])/2;
+      }
+    }
+    if(min == Number.MAX_VALUE) {
+      min = 0;
+    }
+    let average = 0;
+    if(numWords > 0) {
+      average = totalLetters/numWords;
+    }
+    return {
+      "numWords": numWords,
+      "max": max,
+      "min": min,
+      "average": average,
+      "median": median
+    };
   }
 
   getDictionary() {
