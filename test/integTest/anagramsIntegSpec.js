@@ -1,5 +1,8 @@
 'use strict';
 
+process.env.USE_FREQ_MAP = false;
+process.env.INIT_ANAGRAMS = false;
+
 const app = require('../../src/app.js');
 const http = require('request-promise');
 

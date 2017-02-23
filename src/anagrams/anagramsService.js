@@ -10,6 +10,11 @@ class Anagram {
   constructor() {
     this.dictionary = new Dictionary();
     this.anagramsCache = {};
+    this.useFreqMap = process.env.USE_FREQ_MAP;
+    if(process.env.INIT_ANAGRAMS === "true") {
+      this.initAnagramsCache();
+    }
+    this.useFreqMap = process.env.USE_FREQ_MAP;
   }
 
   /***
@@ -33,6 +38,9 @@ class Anagram {
       numWords++;
       if(numWords % 1000 === 0) {
         log.info(numWords + '/' + totalKeys + ' completed');
+      }
+      if(numWords % 25000 === 0) {
+        log.info('25k anagrams completed in: ' + stopWatch.elapsed.seconds + ' seconds');
       }
     }
     stopWatch.stop();
@@ -162,9 +170,41 @@ class Anagram {
     let anagrams = [];
     //Only permute words the dictionary knows
     if(aDictionary.has(word)) {
-      this._permute(word, word, word.length, [], anagrams, {}, aDictionary);
+      if(this.useFreqMap === "true") {
+        anagrams = this.findAnagramsByFrequencyChart(word, aDictionary);
+      } else {
+        this._permute(word, word, word.length, [], anagrams, {}, aDictionary);
+      }
     }
     return anagrams;
+  }
+
+  findAnagramsByFrequencyChart(word, aDictionary=this.dictionary) {
+    const anagrams = [];
+    const wordsOfSameLength = aDictionary.getWordsOfLength(word.length);
+    const wordFrequency = this._createFrequencyChartForWord(word);
+    for(let otherWord of wordsOfSameLength) {
+      if(otherWord !== word) {
+        let otherWordFrequency = this._createFrequencyChartForWord(otherWord);
+        if(_.isEqual(wordFrequency, otherWordFrequency)) {
+          anagrams.push(otherWord);
+        }
+      }
+    }
+    return anagrams;
+  }
+
+  _createFrequencyChartForWord(word) {
+    const frequencyChart = {};
+    for(let i=0; i<word.length; i++) {
+      let letter = word.charAt(i);
+      if(!frequencyChart[letter]) {
+        frequencyChart[letter]=1;
+      } else {
+        frequencyChart[letter]++;
+      }
+    }
+    return frequencyChart;
   }
 
   _filterAnagrams(anagrams, includeProperNouns, max, aDictionary) {
@@ -214,7 +254,7 @@ class Anagram {
       newPrefix = prefix + word.charAt(i);
       if(typeof checkedPrefixes[newPrefix] == 'undefined' || checkedPrefixes[newPrefix] === null) {
         checkedPrefixes[newPrefix] = newPrefix;
-        if(aDictionary.mayHaveSomeWords(newPrefix)) {
+        if(aDictionary.mayHaveSomeWords(newPrefix, originalWord.length)) {
           this._permute(originalWord, newWord, length, newPrefix, anagrams, checkedPrefixes, aDictionary);
         }
       }

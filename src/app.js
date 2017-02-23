@@ -10,12 +10,13 @@ const upload = multer();
 const app = express();
 
 const FOUR_HUNDRED_MESSAGE = 'No body provided, should be { "words": [<words>] }, Don\'t forget application/json header as well';
+const version = 1;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
-  res.send('OK');
+  res.send(version);
 });
 
 app.get('/anagrams/:word.json', (req, res) => {

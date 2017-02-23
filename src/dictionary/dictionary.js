@@ -20,15 +20,20 @@ class Dictionary {
   _init(dictionaryRaw) {
     this.dictionary = {};
     this.nonProperNouns = {};
-    this.wordTree = new WordTreeNode("", null);
-    const alphabet = 'abcdefghijklmnopqrstuvwxyz';
-    for(let i=0; i<alphabet.length; i++) {
-      this.wordTree.addChild(alphabet.charAt(i), new WordTreeNode(alphabet.charAt(i), this.wordTree));
-    }
-
+    this.wordsByLength = {};
+    this.wordTreesByLength = {};
     for(let word of dictionaryRaw) {
       this.addWord(word);
     }
+  }
+
+  _createWordTree() {
+    let wordTree = new WordTreeNode("", null);
+    const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+    for(let i=0; i<alphabet.length; i++) {
+      wordTree.addChild(alphabet.charAt(i), new WordTreeNode(alphabet.charAt(i), wordTree));
+    }
+    return wordTree;
   }
 
   getDictionary() {
@@ -36,7 +41,7 @@ class Dictionary {
   }
 
   addWord(word) {
-    //Don't add words we already have or empty wordr
+    //Don't add words we already have or empty words
     if(this.dictionary[word.toLowerCase()] || word.length === 0) {
       return;
     }
@@ -45,7 +50,23 @@ class Dictionary {
     }
     word = word.toLowerCase();
     this.dictionary[word] = word;
-    let currentNode = this.wordTree;
+    if(!this.wordTreesByLength[word.length]) {
+      this.wordTreesByLength[word.length] = this._createWordTree();
+    }
+    let currentNode = this.wordTreesByLength[word.length];
+    for(let i=0; i<word.length; i++) {
+      let letter = word.charAt(i);
+      if(!currentNode.hasChild(letter)) {
+        currentNode.addChild(letter, new WordTreeNode(letter, currentNode));
+      }
+      currentNode = currentNode.getChild(letter);
+    }
+
+    if(!this.wordsByLength[word.length]) {
+      this.wordsByLength[word.length] = [];
+    }
+    this.wordsByLength[word.length].push(word);
+
     for(let i=0; i<word.length; i++) {
       let letter = word.charAt(i);
       if(!currentNode.hasChild(letter)) {
@@ -59,7 +80,7 @@ class Dictionary {
     word = word.toLowerCase();
     delete this.dictionary[word];
     delete this.nonProperNouns[word];
-    let currentNode =  this.wordTree;
+    let currentNode =  this.wordTreesByLength[word.length];
     for(let i=0; i<word.length; i++) {
       currentNode = currentNode.getChild(word.charAt(i));
     }
@@ -69,10 +90,20 @@ class Dictionary {
       currentNode = currentNode.getParent();
       currentNode.removeChild(deleteKey);
     }
+    for(let i=0; i<this.wordsByLength[word.length]; i++) {
+      if(this.wordsByLength[word.length][i] === word) {
+        this.wordsByLength[word.length].splice(i, 1);
+        i = this.wordsByLength[word.length].length;
+      }
+    }
   }
 
   isProperNoun(word) {
     return (typeof this.nonProperNouns[word] === 'undefined' || this.nonProperNouns[word] === null);
+  }
+
+  getWordsOfLength(length) {
+    return this.wordsByLength[length];
   }
 
   /**
@@ -138,8 +169,8 @@ class Dictionary {
     return (typeof dictionaryWord != 'undefined' && this.dictionary[word] !== null);
   }
 
-  mayHaveSomeWords(word) {
-    let currentNode = this.wordTree;
+  mayHaveSomeWords(word, originalWordLength) {
+    let currentNode = this.wordTreesByLength[originalWordLength];
     for(let i=0; i<word.length; i++) {
       let letter = word.charAt(i);
       if(currentNode.hasChild(letter)) {
